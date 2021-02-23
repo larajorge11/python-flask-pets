@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:13.2
+    env_file:
+      - database.env
+    restart: always
+    ports:
+    - 5432:5432
+  api:
+    build: .
+    restart: on-failure
+    environment:
+      POSTGRES_DB: test
+      POSTGRES_USERNAME: jorgelara
+      POSTGRES_PASSWORD: example
+      POSTGRES_URI: db:5432
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+  run-migrations:
+    build: .
+    restart: on-failure
+    environment:
+      POSTGRES_DB: test
+      POSTGRES_USERNAME: jorgelara
+      POSTGRES_PASSWORD: example
+      POSTGRES_URI: db:5432
+    command: >
+      bash -c "
+        export FLASK_APP=src/main.py &&
+        export POSTGRES_URI=db:5432 &&
+        export POSTGRES_DB=test &&
+        export POSTGRES_USERNAME=jorgelara &&
+        export POSTGRES_PASSWORD=example &&
+        python3 src/manage.py db init &&
+        python3 src/manage.py db migrate &&
+        python3 src/manage.py db upgrade"
+    depends_on:
+      - db
+      - api
